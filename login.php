@@ -1,5 +1,8 @@
 <?php
 
+session_start();
+
+
 $usuarios = [
     "sebastian@sigeru.com"      => "123456",
     "leonardo@sigeru.com"  => "123456",
@@ -13,7 +16,7 @@ $password = $_POST["password"] ?? "";
 
 if (isset($usuarios[$email]) && $usuarios[$email] === $password) {
 
-    header("Location: http://localhost/Frontend_SIGERU/home.html");
+    header("Location: ../Frontend_SIGERU/home.html");
     exit();
 
 } else {
