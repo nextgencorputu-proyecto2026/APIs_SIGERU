@@ -1,5 +1,8 @@
 <?php
 
+session_start();
+
+
 $usuarios = [
     "sebastian@sigeru.com"      => "123456",
     "leonardo@sigeru.com"  => "123456",
