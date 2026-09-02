@@ -13,7 +13,7 @@ $password = $_POST["password"] ?? "";
 
 if (isset($usuarios[$email]) && $usuarios[$email] === $password) {
 
-    header("Location: http://localhost/Frontend_SIGERU/home.html");
+    header("Location: ../Frontend_SIGERU/home.html");
     exit();
 
 } else {
