@@ -5,10 +5,17 @@ session_start();
 $email = $_POST["email"] ?? "";
 $password = $_POST["password"] ?? "";
 
-if (isset($usuarios[$email]) && $usuarios[$email] === $password) {
+$usuarioEncontrado = null;
+
+foreach ($usuarios as $usuario) {
+    if ($usuario["email"] === $email && $usuario["password"] === $password) {
+        $usuarioEncontrado = $usuario;
+    }
+}
+
+if ($usuarioEncontrado) {
 
     header("Location: ../../../Frontend_SIGERU/home.html");
-    exit();
 
 } else {
 

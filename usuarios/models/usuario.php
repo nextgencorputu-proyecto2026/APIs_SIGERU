@@ -1,9 +1,44 @@
 <?php
 
 $usuarios = [
-    "sebastian@sigeru.com"      => "123456",
-    "leonardo@sigeru.com"       => "123456",
-    "mateo@sigeru.com"          => "123456",
-    "profe@sigeru.com"          => "123456",
-    "guillermo@sigeru.com"      => "123456"
+    [
+        "id" => 1,
+        "nombre" => "Sebastian Ovelar",
+        "email" => "sebastian@sigeru.com",
+        "password" => "123456",
+        "rol" => "Administrativo",
+        "estado" => "Activo"
+    ],
+    [
+        "id" => 2,
+        "nombre" => "Leonardo Barreneche",
+        "email" => "leonardo@sigeru.com",
+        "password" => "123456",
+        "rol" => "Administrativo",
+        "estado" => "Activo"
+    ],
+    [
+        "id" => 3,
+        "nombre" => "Mateo Rodriguez",
+        "email" => "mateo@sigeru.com",
+        "password" => "123456",
+        "rol" => "Administrativo",
+        "estado" => "Activo"
+    ],
+    [
+        "id" => 4,
+        "nombre" => "Profesor",
+        "email" => "profe@sigeru.com",
+        "password" => "123456",
+        "rol" => "Administrativo",
+        "estado" => "Activo"
+    ],
+    [
+        "id" => 5,
+        "nombre" => "Guillermo Gutierrez",
+        "email" => "guillermo@sigeru.com",
+        "password" => "123456",
+        "rol" => "Administrativo",
+        "estado" => "Activo"
+    ]
 ];
