@@ -24,7 +24,15 @@ class ContenedorController extends Controller
      */
     public function store(Request $request)
     {
-        $contenedor = Contenedor::create($request->all());
+
+        $contenedor = Contenedor::create([
+            'UbicacionX' => $request->ubicacionX,
+            'UbicacionY' => $request->ubicacionY,
+            'Estado' => $request->estado,
+            'nivelLlenado' => $request->nivelLlenado,
+            'tipoResiduo' => $request->tipoResiduo,
+            'idRuta' => $request->idRuta,
+        ]);
 
         return response()->json([
             'data' => $contenedor,
