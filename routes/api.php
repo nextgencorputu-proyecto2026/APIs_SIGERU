@@ -12,35 +12,80 @@ Route::get('health', fn() => response()->json([
     'message' => 'API running',
 ]));
 
-Route::get('usuarios', [UsuarioController::class, 'index']);
-Route::post('usuarios', [UsuarioController::class, 'store']);
-Route::get('usuarios/{id}', [UsuarioController::class, 'show']);
-Route::put('usuarios/{id}', [UsuarioController::class, 'update']);
-Route::delete('usuarios/{id}', [UsuarioController::class, 'destroy']);
+Route::get('usuarios', [UsuarioController::class, 'index'])
+    ->middleware('rol:Administrador');
+
+Route::post('usuarios', [UsuarioController::class, 'store'])
+    ->middleware('rol:Administrador');
+
+Route::get('usuarios/{id}', [UsuarioController::class, 'show'])
+    ->middleware('rol:Administrador');
+
+Route::put('usuarios/{id}', [UsuarioController::class, 'update'])
+    ->middleware('rol:Administrador');
+
+Route::delete('usuarios/{id}', [UsuarioController::class, 'destroy'])
+    ->middleware('rol:Administrador');
 
 Route::post('login', [UsuarioController::class, 'login']);
 
-Route::get('camiones', [CamionController::class, 'index']);
-Route::post('camiones', [CamionController::class, 'store']);
-Route::get('camiones/{id}', [CamionController::class, 'show']);
-Route::put('camiones/{id}', [CamionController::class, 'update']);
-Route::delete('camiones/{id}', [CamionController::class, 'destroy']);
+Route::get('camiones', [CamionController::class, 'index'])
+    ->middleware('rol:Administrador');
 
-Route::get('contenedores', [ContenedorController::class, 'index']);
-Route::post('contenedores', [ContenedorController::class, 'store']);
-Route::get('contenedores/{id}', [ContenedorController::class, 'show']);
-Route::put('contenedores/{id}', [ContenedorController::class, 'update']);
-Route::delete('contenedores/{id}', [ContenedorController::class, 'destroy']);
+Route::post('camiones', [CamionController::class, 'store'])
+    ->middleware('rol:Administrador');
 
-Route::get('centros-acopio', [CentroAcopioController::class, 'index']);
-Route::post('centros-acopio', [CentroAcopioController::class, 'store']);
-Route::get('centros-acopio/{id}', [CentroAcopioController::class, 'show']);
-Route::put('centros-acopio/{id}', [CentroAcopioController::class, 'update']);
-Route::delete('centros-acopio/{id}', [CentroAcopioController::class, 'destroy']);
+Route::get('camiones/{id}', [CamionController::class, 'show'])
+    ->middleware('rol:Administrador');
 
-Route::get('maquinarias', [MaquinariaController::class, 'index']);
-Route::post('maquinarias', [MaquinariaController::class, 'store']);
-Route::get('maquinarias/{id}', [MaquinariaController::class, 'show']);
-Route::put('maquinarias/{id}', [MaquinariaController::class, 'update']);
-Route::delete('maquinarias/{id}', [MaquinariaController::class, 'destroy']);
+Route::put('camiones/{id}', [CamionController::class, 'update'])
+    ->middleware('rol:Administrador');
+
+Route::delete('camiones/{id}', [CamionController::class, 'destroy'])
+    ->middleware('rol:Administrador');
+
+Route::get('contenedores', [ContenedorController::class, 'index'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::post('contenedores', [ContenedorController::class, 'store'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::get('contenedores/{id}', [ContenedorController::class, 'show'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::put('contenedores/{id}', [ContenedorController::class, 'update'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::delete('contenedores/{id}', [ContenedorController::class, 'destroy'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::get('centros-acopio', [CentroAcopioController::class, 'index'])
+    ->middleware('rol:Administrador');
+
+Route::post('centros-acopio', [CentroAcopioController::class, 'store'])
+    ->middleware('rol:Administrador');
+
+Route::get('centros-acopio/{id}', [CentroAcopioController::class, 'show'])
+    ->middleware('rol:Administrador');
+
+Route::put('centros-acopio/{id}', [CentroAcopioController::class, 'update'])
+    ->middleware('rol:Administrador');
+
+Route::delete('centros-acopio/{id}', [CentroAcopioController::class, 'destroy'])
+    ->middleware('rol:Administrador');
+
+Route::get('maquinarias', [MaquinariaController::class, 'index'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::post('maquinarias', [MaquinariaController::class, 'store'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::get('maquinarias/{id}', [MaquinariaController::class, 'show'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::put('maquinarias/{id}', [MaquinariaController::class, 'update'])
+    ->middleware('rol:Administrador,Operario');
+
+Route::delete('maquinarias/{id}', [MaquinariaController::class, 'destroy'])
+    ->middleware('rol:Administrador,Operario');
 
