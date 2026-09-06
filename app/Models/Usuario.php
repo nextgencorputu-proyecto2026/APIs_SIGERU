@@ -19,5 +19,7 @@ class Usuario extends Model
         'apellido1',
         'apellido2',
         'fec_nac',
+        'tipo',
+        'idCentro',
     ];
 }

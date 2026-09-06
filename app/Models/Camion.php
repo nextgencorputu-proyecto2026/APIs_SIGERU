@@ -6,18 +6,17 @@ use Illuminate\Database\Eloquent\Model;
 
 class Camion extends Model
 {
-    protected $table = 'camion';
+    protected $table = 'vehiculos';
 
     protected $primaryKey = 'idVehiculo';
 
     public $timestamps = false;
 
     protected $fillable = [
-        'idVehiculo',
+        'matricula',
+        'marca',
         'tipo',
+        'estado',
         'capacidad',
-        'idCentroAcopio',
-        'idVertedero',
     ];
 }
-

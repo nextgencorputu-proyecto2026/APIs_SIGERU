@@ -16,8 +16,6 @@ class Maquinaria extends Model
         'nombre',
         'tipo',
         'estado',
-        'idCentroAcopio',
-        'idVertedero',
-        'idPuntoDeposito',
+        'idCentro',
     ];
 }

@@ -6,9 +6,9 @@ use Illuminate\Database\Eloquent\Model;
 
 class CentroAcopio extends Model
 {
-    protected $table = 'centro_acopio';
+    protected $table = 'centro';
 
-    protected $primaryKey = 'idCentroAcopio';
+    protected $primaryKey = 'idCentro';
 
     public $timestamps = false;
 
@@ -16,6 +16,8 @@ class CentroAcopio extends Model
         'nombre',
         'direccion',
         'capacidad',
-        'tipoResiduo',
+        'tipo',
+        'ubicacionX',
+        'ubicacionY',
     ];
 }

@@ -13,11 +13,11 @@ class Contenedor extends Model
     public $timestamps = false;
 
     protected $fillable = [
-        'UbicacionX',
-        'UbicacionY',
-        'Estado',
+        'ubicacionX',
+        'ubicacionY',
+        'estado',
         'nivelLlenado',
-        'tipoResiduo',
+        'tipo',
         'idRuta',
     ];
 }
