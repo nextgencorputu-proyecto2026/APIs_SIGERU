@@ -11,9 +11,22 @@ class UsuarioController extends Controller
     /**
      * Display a listing of the resource.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $usuarios = Usuario::all();
+        $nombre = $request->nombre;
+
+        $usuarios = Usuario::when($nombre, function ($query) use ($nombre) {
+
+            $query->where(function ($q) use ($nombre) {
+
+                $q->where('nombre1', 'LIKE', '%' . $nombre . '%')
+                    ->orWhere('nombre2', 'LIKE', '%' . $nombre . '%')
+                    ->orWhere('apellido1', 'LIKE', '%' . $nombre . '%')
+                    ->orWhere('apellido2', 'LIKE', '%' . $nombre . '%');
+
+            });
+
+        })->get();
 
         return response()->json([
             'success' => true,
