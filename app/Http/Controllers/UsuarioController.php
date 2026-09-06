@@ -15,18 +15,33 @@ class UsuarioController extends Controller
     {
         $nombre = $request->nombre;
 
-        $usuarios = Usuario::when($nombre, function ($query) use ($nombre) {
+        $usuarios = Usuario::leftJoin(
+            'credenciales',
+            'usuario.idUsu',
+            '=',
+            'credenciales.idUsu'
+        )
+            ->when($nombre, function ($query) use ($nombre) {
 
-            $query->where(function ($q) use ($nombre) {
+                $query->where(function ($q) use ($nombre) {
 
-                $q->where('nombre1', 'LIKE', '%' . $nombre . '%')
-                    ->orWhere('nombre2', 'LIKE', '%' . $nombre . '%')
-                    ->orWhere('apellido1', 'LIKE', '%' . $nombre . '%')
-                    ->orWhere('apellido2', 'LIKE', '%' . $nombre . '%');
+                    $q->where('usuario.nombre1', 'LIKE', '%' . $nombre . '%')
+                        ->orWhere('usuario.nombre2', 'LIKE', '%' . $nombre . '%')
+                        ->orWhere('usuario.apellido1', 'LIKE', '%' . $nombre . '%')
+                        ->orWhere('usuario.apellido2', 'LIKE', '%' . $nombre . '%');
 
-            });
+                });
 
-        })->get();
+            })
+            ->select(
+                'usuario.idUsu',
+                'usuario.nombre1',
+                'usuario.apellido1',
+                'usuario.tipo',
+                'usuario.idCentro',
+                'credenciales.mail'
+            )
+            ->get();
 
         return response()->json([
             'success' => true,
