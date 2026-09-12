@@ -3,14 +3,18 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use App\Models\Usuario;
 use App\Models\Credenciales;
 
 class UsuarioController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
+    /*
+    |--------------------------------------------------------------------------
+    | Listar usuarios
+    |--------------------------------------------------------------------------
+    */
+
     public function index(Request $request)
     {
         $nombre = $request->nombre;
@@ -49,9 +53,13 @@ class UsuarioController extends Controller
         ]);
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Registrar usuario
+    |--------------------------------------------------------------------------
+    */
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -81,7 +89,7 @@ class UsuarioController extends Controller
         Credenciales::create([
             'idUsu' => $usuario->idUsu,
             'mail' => $validated['email'],
-            'contrasena' => $validated['password'],
+            'contrasena' => Hash::make($validated['password']),
         ]);
 
         return response()->json([
@@ -91,9 +99,13 @@ class UsuarioController extends Controller
         ], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Mostrar usuario
+    |--------------------------------------------------------------------------
+    */
+
     public function show(string $id)
     {
         $usuario = Usuario::find($id);
@@ -110,9 +122,14 @@ class UsuarioController extends Controller
             'data' => $usuario,
         ]);
     }
-    /**
-     * Update the specified resource in storage.
-     */
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | Actualizar usuario
+    |--------------------------------------------------------------------------
+    */
+
     public function update(Request $request, string $id)
     {
         $usuario = Usuario::find($id);
@@ -144,9 +161,13 @@ class UsuarioController extends Controller
         ]);
     }
 
-    /**
-     * Remove the specified resource from storage.
-     */
+
+    /*
+    |--------------------------------------------------------------------------
+    | Eliminar usuario
+    |--------------------------------------------------------------------------
+    */
+
     public function destroy(string $id)
     {
         $usuario = Usuario::find($id);
@@ -165,41 +186,4 @@ class UsuarioController extends Controller
             'mensaje' => 'Usuario eliminado correctamente',
         ]);
     }
-
-    /**
-     * Login: valida email y contrasena contra la tabla credenciales.
-     */
-    public function login(Request $request)
-    {
-        $email = $request->email;
-        $password = $request->password;
-
-        $credencial = Credenciales::where('mail', $email)
-            ->where('contrasena', $password)
-            ->first();
-
-        if (!$credencial) {
-            return response()->json([
-                'success' => false,
-                'mensaje' => 'Usuario o contraseña incorrectos',
-            ], 401);
-        }
-
-        $usuario = Usuario::find($credencial->idUsu);
-
-        session([
-            'usuario' => [
-                'idUsu' => $usuario->idUsu,
-                'tipo' => $usuario->tipo,
-            ],
-        ]);
-
-        return response()->json([
-            'success' => true,
-            'mensaje' => 'Login correcto',
-            'data' => $usuario,
-        ]);
-    }
-
-
 }

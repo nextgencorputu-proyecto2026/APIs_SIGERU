@@ -2,9 +2,10 @@
 
 namespace App\Models;
 
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
+use Tymon\JWTAuth\Contracts\JWTSubject;
 
-class Credenciales extends Model
+class Credenciales extends Authenticatable implements JWTSubject
 {
     protected $table = 'credenciales';
 
@@ -19,4 +20,23 @@ class Credenciales extends Model
         'mail',
         'contrasena',
     ];
+
+    protected $hidden = [
+        'contrasena',
+    ];
+
+    public function getAuthPasswordName(): string
+    {
+        return 'contrasena';
+    }
+
+    public function getJWTIdentifier()
+    {
+        return $this->getKey();
+    }
+
+    public function getJWTCustomClaims(): array
+    {
+        return [];
+    }
 }
