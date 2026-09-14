@@ -27,7 +27,7 @@ class MaquinariaController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'nombre' => 'required|string|max:100',
+            'nombre' => 'required|string|max:60',
             'tipo' => 'required|in:Aplanadora,Bobcat,Retroexcavadora',
             'estado' => 'required|in:Inhabilitado,Disponible',
             'idCentro' => 'required|integer|exists:centro,idCentro',

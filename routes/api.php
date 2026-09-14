@@ -8,6 +8,7 @@ use App\Http\Controllers\CamionController;
 use App\Http\Controllers\ContenedorController;
 use App\Http\Controllers\CentroAcopioController;
 use App\Http\Controllers\MaquinariaController;
+use App\Http\Controllers\RutaController;
 
 /*
 |--------------------------------------------------------------------------
@@ -52,6 +53,9 @@ Route::middleware('auth:api')->group(function () {
     */
 
     Route::get('auth/me', [AuthController::class, 'me']);
+
+    Route::get('rutas', [RutaController::class, 'index'])
+        ->middleware('rol:Administrador,Operario');
 
 
     /*

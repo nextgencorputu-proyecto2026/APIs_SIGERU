@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Contenedor;
+use Illuminate\Validation\Rule;
 
 class ContenedorController extends Controller
 {
@@ -26,12 +27,12 @@ class ContenedorController extends Controller
    public function store(Request $request)
 {
     $validated = $request->validate([
-        'ubicacionX' => 'required|numeric',
-        'ubicacionY' => 'required|numeric',
+        'ubicacionX' => 'required|numeric|between:-99.9999,99.9999|decimal:0,4',
+        'ubicacionY' => 'required|numeric|between:-99.9999,99.9999|decimal:0,4',
         'estado' => 'required|in:Inhabilitado,En mantenimiento,Disponible',
-        'nivelLlenado' => 'required|numeric|min:0|max:100',
+        'nivelLlenado' => 'required|integer|in:0',
         'tipo' => 'required|in:Reciclables,Mixtos',
-        'idRuta' => 'required|integer|exists:ruta,idRuta',
+        'idRuta' => ['nullable', 'integer', Rule::exists('ruta', 'idRuta')->where('tipoResiduo', $request->input('tipo'))],
     ]);
 
     $contenedor = Contenedor::create($validated);
@@ -83,7 +84,15 @@ class ContenedorController extends Controller
         'estado' => 'sometimes|required|in:Inhabilitado,En mantenimiento,Disponible',
         'nivelLlenado' => 'sometimes|required|numeric|min:0|max:100',
         'tipo' => 'sometimes|required|in:Reciclables,Mixtos',
-        'idRuta' => 'sometimes|required|integer|exists:ruta,idRuta',
+        'idRuta' => [
+            'sometimes',
+            'nullable',
+            'integer',
+            Rule::exists('ruta', 'idRuta')->where(
+                'tipoResiduo',
+                $request->input('tipo', $contenedor->tipo)
+            ),
+        ],
     ]);
 
     $contenedor->update($validated);

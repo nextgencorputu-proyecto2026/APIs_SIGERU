@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\Camion;
+use Illuminate\Database\QueryException;
 
 class CamionController extends Controller
 {
@@ -155,7 +156,20 @@ class CamionController extends Controller
             ], 404);
         }
 
-        $camion->delete();
+        try {
+            $camion->delete();
+        } catch (QueryException $exception) {
+            $mysqlErrorCode = (int) ($exception->errorInfo[1] ?? 0);
+
+            if ($mysqlErrorCode === 1451) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se puede eliminar el vehículo porque tiene atenciones o actividades asociadas',
+                ], 409);
+            }
+
+            throw $exception;
+        }
 
         return response()->json([
             'success' => true,

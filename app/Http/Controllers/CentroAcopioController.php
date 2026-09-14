@@ -12,7 +12,7 @@ class CentroAcopioController extends Controller
      */
     public function index()
 {
-    $centrosAcopio = CentroAcopio::where('tipo', 'Centro de acopio')->get();
+    $centrosAcopio = CentroAcopio::orderBy('nombre')->get();
 
     return response()->json([
         'success' => true,
@@ -26,13 +26,19 @@ class CentroAcopioController extends Controller
     public function store(Request $request)
 {
     $validated = $request->validate([
-        'nombre' => 'required|string|max:100',
-        'direccion' => 'required|string|max:200',
-        'capacidad' => 'required|numeric|min:0',
-        'tipo' => 'required|in:Centro de acopio',
-        'ubicacionX' => 'required|numeric',
-        'ubicacionY' => 'required|numeric',
+        'nombre' => 'required|string|max:60',
+        'direccion' => 'required|string|max:120',
+        'capacidad' => 'nullable|numeric|min:0.01',
+        'tipo' => 'required|in:Central Operativa,Centro de acopio,Punto de depósito,Vertedero',
+        'ubicacionX' => 'required|numeric|between:-99.9999,99.9999|decimal:0,4',
+        'ubicacionY' => 'required|numeric|between:-99.9999,99.9999|decimal:0,4',
     ]);
+
+    if ($validated['tipo'] === 'Central Operativa') {
+        $validated['capacidad'] = null;
+    } elseif (!isset($validated['capacidad']) || $validated['capacidad'] <= 0) {
+        return response()->json(['success' => false, 'mensaje' => 'La capacidad debe ser mayor a 0'], 422);
+    }
 
     $centroAcopio = CentroAcopio::create($validated);
 
@@ -48,7 +54,7 @@ class CentroAcopioController extends Controller
      */
     public function show(string $id)
 {
-    $centroAcopio = CentroAcopio::where('tipo', 'Centro de acopio')->find($id);
+    $centroAcopio = CentroAcopio::find($id);
 
     if (!$centroAcopio) {
         return response()->json([
@@ -68,7 +74,7 @@ class CentroAcopioController extends Controller
      */
     public function update(Request $request, string $id)
 {
-    $centroAcopio = CentroAcopio::where('tipo', 'Centro de acopio')->find($id);
+    $centroAcopio = CentroAcopio::find($id);
 
     if (!$centroAcopio) {
         return response()->json([
@@ -78,12 +84,20 @@ class CentroAcopioController extends Controller
     }
 
     $validated = $request->validate([
-        'nombre' => 'sometimes|required|string|max:100',
-        'direccion' => 'sometimes|required|string|max:200',
-        'capacidad' => 'sometimes|required|numeric|min:0',
-        'ubicacionX' => 'sometimes|required|numeric',
-        'ubicacionY' => 'sometimes|required|numeric',
+        'nombre' => 'sometimes|required|string|max:60',
+        'direccion' => 'sometimes|required|string|max:120',
+        'capacidad' => 'nullable|numeric|min:0.01',
+        'tipo' => 'sometimes|required|in:Central Operativa,Centro de acopio,Punto de depósito,Vertedero',
+        'ubicacionX' => 'sometimes|required|numeric|between:-99.9999,99.9999|decimal:0,4',
+        'ubicacionY' => 'sometimes|required|numeric|between:-99.9999,99.9999|decimal:0,4',
     ]);
+
+    $tipoFinal = $validated['tipo'] ?? $centroAcopio->tipo;
+    if ($tipoFinal === 'Central Operativa') {
+        $validated['capacidad'] = null;
+    } elseif (($validated['capacidad'] ?? $centroAcopio->capacidad) <= 0) {
+        return response()->json(['success' => false, 'mensaje' => 'La capacidad debe ser mayor a 0'], 422);
+    }
 
     $centroAcopio->update($validated);
 
@@ -99,7 +113,7 @@ class CentroAcopioController extends Controller
      */
    public function destroy(string $id)
 {
-    $centroAcopio = CentroAcopio::where('tipo', 'Centro de acopio')->find($id);
+    $centroAcopio = CentroAcopio::find($id);
 
     if (!$centroAcopio) {
         return response()->json([

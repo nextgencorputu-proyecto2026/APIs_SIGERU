@@ -63,16 +63,16 @@ class UsuarioController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'ci' => 'required|string|max:20|unique:usuario,ci',
-            'nombre1' => 'required|string|max:50',
-            'nombre2' => 'nullable|string|max:50',
-            'apellido1' => 'required|string|max:50',
-            'apellido2' => 'nullable|string|max:50',
+            'ci' => 'required|digits:8|unique:usuario,ci',
+            'nombre1' => 'required|string|max:30',
+            'nombre2' => 'nullable|string|max:30',
+            'apellido1' => 'required|string|max:30',
+            'apellido2' => 'nullable|string|max:30',
             'fec_nac' => 'required|date',
             'tipo' => 'required|in:Administrador,Operario,Chofer',
             'idCentro' => 'required|integer|exists:centro,idCentro',
             'email' => 'required|email|unique:credenciales,mail',
-            'password' => 'required|string|min:6',
+            'password' => ['required', 'string', 'min:6', 'regex:/[A-Z]/'],
         ]);
 
         $usuario = Usuario::create([
