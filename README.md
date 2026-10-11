@@ -73,7 +73,21 @@ Requisito: tener Docker Desktop instalado y abierto.
 
 4. La aplicación queda disponible en:
    - Frontend (UI): http://localhost:5173
-   - API: http://localhost:8080/api
+   - API: http://localhost:8000/api
 
 5. Para detener el entorno (conservando la base de datos):
    docker compose down
+
+## Usuarios de prueba
+
+Ingresar desde [Login](http://localhost:5173/login.html):
+
+| Rol | Correo | Contraseña |
+| --- | --- | --- |
+| Administrador | administrador@sigeru.test | Prueba123! |
+| Operario | operario@sigeru.test | Prueba123! |
+| Chofer | chofer@sigeru.test | Prueba123! |
+
+La API está disponible en `http://localhost:8000/api`; el inicio de sesión usa `POST /api/auth/login` con `email` y `password`.
+
+

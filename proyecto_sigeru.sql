@@ -556,7 +556,11 @@ VALUES
 (9,  '49000009', 'Jorge',    'Luis',   'Techera',   'Viera',     '1983-08-09', 'Chofer',         1),
 (10, '50000010', 'Camila',   NULL,     'Olivera',   'Díaz',      '1995-04-19', 'Operario',       1),
 (11, '51000011', 'Bruno',    'Nicolás','Correa',    'Machado',   '1991-10-30', 'Operario',       1),
-(12, '52000012', 'Lucía',    NULL,     'Morales',   'Barrios',   '1993-05-11', 'Chofer',         1);
+(12, '52000012', 'Lucía',    NULL,     'Morales',   'Barrios',   '1993-05-11', 'Chofer',         1),
+-- Cuentas de prueba por rol (sin asignaciones iniciales a cuadrillas).
+(13, '99000001', 'Administrador', NULL, 'Prueba', NULL, '1990-01-01', 'Administrador', 1),
+(14, '99000002', 'Operario', NULL, 'Prueba', NULL, '1990-01-01', 'Operario', 1),
+(15, '99000003', 'Chofer', NULL, 'Prueba', NULL, '1990-01-01', 'Chofer', 1);
 
 -- ============================================================
 -- 3. CREDENCIALES
@@ -575,7 +579,10 @@ VALUES
 (9,  'jorge.techera@sigeru.test',    '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu'),
 (10, 'camila.olivera@sigeru.test',   '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu'),
 (11, 'bruno.correa@sigeru.test',     '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu'),
-(12, 'lucia.morales@sigeru.test',    '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu');
+(12, 'lucia.morales@sigeru.test',    '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu'),
+(13, 'administrador@sigeru.test', '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu'),
+(14, 'operario@sigeru.test', '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu'),
+(15, 'chofer@sigeru.test', '$2y$12$rdX5p7XcYyQ7mrF8scivcesKAau4wSFlQP..T9tvaAAYzPVTIJ4Eu');
 
 -- ============================================================
 -- 4. TELÉFONOS

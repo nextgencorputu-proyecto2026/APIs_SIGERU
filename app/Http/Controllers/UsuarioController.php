@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Database\QueryException;
+use Throwable;
 use App\Models\Usuario;
 use App\Models\Credenciales;
 
@@ -170,20 +172,57 @@ class UsuarioController extends Controller
 
     public function destroy(string $id)
     {
-        $usuario = Usuario::find($id);
+        try {
+            $usuario = Usuario::find($id);
 
-        if (!$usuario) {
+            if (!$usuario) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'Usuario no encontrado',
+                ], 404);
+            }
+
+            $usuario->delete();
+
             return response()->json([
-                'success' => false,
-                'mensaje' => 'Usuario no encontrado',
-            ], 404);
+                'success' => true,
+                'mensaje' => 'Usuario eliminado correctamente',
+            ]);
+        } catch (QueryException $exception) {
+            $codigo = (int) ($exception->errorInfo[1] ?? 0);
+            $detalle = strtolower($exception->getMessage());
+            $restriccion = $codigo === 1451
+                || ($codigo === 19 && str_contains($detalle, 'foreign key constraint failed'));
+
+            if ($restriccion) {
+                $motivos = [
+                    'fk_integra_usuario' => 'integra una cuadrilla. Debe desvincularlo o reemplazarlo antes de eliminarlo',
+                    'fk_asigna_usuario' => 'tiene asignaciones de rutas registradas',
+                    'fk_reporta_usuario' => 'tiene reportes de incidencias asociados',
+                    'fk_controla_usuario' => 'tiene controles de incidencias asociados',
+                ];
+                $motivo = 'tiene registros relacionados que deben conservarse';
+                foreach ($motivos as $clave => $texto) {
+                    if (str_contains($detalle, $clave)) {
+                        $motivo = $texto;
+                        break;
+                    }
+                }
+
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se puede eliminar el usuario porque ' . $motivo . '.',
+                ], 409);
+            }
+
+            report($exception);
+        } catch (Throwable $exception) {
+            report($exception);
         }
 
-        $usuario->delete();
-
         return response()->json([
-            'success' => true,
-            'mensaje' => 'Usuario eliminado correctamente',
-        ]);
+            'success' => false,
+            'mensaje' => 'Ocurrió un error inesperado al eliminar el usuario. Intente nuevamente; si persiste, contacte al administrador.',
+        ], 500);
     }
 }

@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use App\Models\CentroAcopio;
+use Illuminate\Database\QueryException;
+use Throwable;
 
 class CentroAcopioController extends Controller
 {
@@ -93,10 +95,17 @@ class CentroAcopioController extends Controller
     ]);
 
     $tipoFinal = $validated['tipo'] ?? $centroAcopio->tipo;
+    $capacidadFinal = array_key_exists('capacidad', $validated)
+        ? $validated['capacidad'] : $centroAcopio->capacidad;
     if ($tipoFinal === 'Central Operativa') {
+        if (array_key_exists('capacidad', $validated) && $validated['capacidad'] !== null) {
+            return response()->json(['success' => false, 'mensaje' => 'Una Central Operativa no admite capacidad. Para asignarle capacidad, cambie el tipo de centro.'], 422);
+        }
         $validated['capacidad'] = null;
-    } elseif (($validated['capacidad'] ?? $centroAcopio->capacidad) <= 0) {
+    } elseif ($capacidadFinal === null || $capacidadFinal <= 0) {
         return response()->json(['success' => false, 'mensaje' => 'La capacidad debe ser mayor a 0'], 422);
+    } else {
+        $validated['capacidad'] = $capacidadFinal;
     }
 
     $centroAcopio->update($validated);
@@ -111,22 +120,35 @@ class CentroAcopioController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-   public function destroy(string $id)
-{
-    $centroAcopio = CentroAcopio::find($id);
-
-    if (!$centroAcopio) {
-        return response()->json([
-            'success' => false,
-            'mensaje' => 'Centro de acopio no encontrado',
-        ], 404);
+    public function destroy(string $id)
+    {
+        try {
+            $centroAcopio = CentroAcopio::find($id);
+            if (!$centroAcopio) {
+                return response()->json(['success' => false, 'mensaje' => 'Centro de acopio no encontrado'], 404);
+            }
+            $centroAcopio->delete();
+            return response()->json(['success' => true, 'mensaje' => 'Centro de acopio eliminado correctamente']);
+        } catch (QueryException $exception) {
+            $codigo = (int) ($exception->errorInfo[1] ?? 0);
+            $detalle = strtolower($exception->getMessage());
+            if ($codigo === 1451 || ($codigo === 19 && str_contains($detalle, 'foreign key constraint failed'))) {
+                $motivo = 'tiene registros relacionados que deben conservarse';
+                foreach ([
+                    'fk_usuario_centro' => 'tiene usuarios asociados',
+                    'fk_maquinaria_centro' => 'tiene maquinaria asociada',
+                    'fk_recoleccion_centro' => 'figura como destino de recolecciones',
+                    'fk_traslada_origen' => 'figura como origen de traslados',
+                    'fk_traslada_destino' => 'figura como destino de traslados',
+                ] as $clave => $texto) {
+                    if (str_contains($detalle, $clave)) { $motivo = $texto; break; }
+                }
+                return response()->json(['success' => false, 'mensaje' => 'No se puede eliminar el centro porque ' . $motivo . '.'], 409);
+            }
+            report($exception);
+        } catch (Throwable $exception) {
+            report($exception);
+        }
+        return response()->json(['success' => false, 'mensaje' => 'Ocurrió un error inesperado al eliminar el centro. Intente nuevamente; si persiste, contacte al administrador.'], 500);
     }
-
-    $centroAcopio->delete();
-
-    return response()->json([
-        'success' => true,
-        'mensaje' => 'Centro de acopio eliminado correctamente',
-    ]);
-}
 }
