@@ -1,14 +1,15 @@
 <?php
 
-use Illuminate\Support\Facades\Route;
-
 use App\Http\Controllers\Api\AuthController;
-use App\Http\Controllers\UsuarioController;
 use App\Http\Controllers\CamionController;
-use App\Http\Controllers\ContenedorController;
 use App\Http\Controllers\CentroAcopioController;
+use App\Http\Controllers\ContenedorController;
+use App\Http\Controllers\CuadrillaController;
+use App\Http\Controllers\IncidenciaController;
 use App\Http\Controllers\MaquinariaController;
 use App\Http\Controllers\RutaController;
+use App\Http\Controllers\UsuarioController;
+use Illuminate\Support\Facades\Route;
 
 /*
 |--------------------------------------------------------------------------
@@ -19,8 +20,7 @@ use App\Http\Controllers\RutaController;
 |
 */
 
-
-Route::get('health', fn() => response()->json([
+Route::get('health', fn () => response()->json([
     'success' => true,
     'message' => 'API running',
 ]));
@@ -34,13 +34,12 @@ Route::prefix('auth')->group(function () {
 
 });
 
-
 /*
 |--------------------------------------------------------------------------
 | Rutas protegidas
 |--------------------------------------------------------------------------
 |
-| 
+|
 |
 */
 
@@ -56,7 +55,6 @@ Route::middleware('auth:api')->group(function () {
 
     Route::get('rutas', [RutaController::class, 'index'])
         ->middleware('rol:Administrador,Operario');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -79,7 +77,6 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('usuarios/{id}', [UsuarioController::class, 'destroy'])
         ->middleware('rol:Administrador');
 
-
     /*
     |--------------------------------------------------------------------------
     | Camiones
@@ -100,7 +97,6 @@ Route::middleware('auth:api')->group(function () {
 
     Route::delete('camiones/{id}', [CamionController::class, 'destroy'])
         ->middleware('rol:Administrador');
-
 
     /*
     |--------------------------------------------------------------------------
@@ -123,7 +119,6 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('contenedores/{id}', [ContenedorController::class, 'destroy'])
         ->middleware('rol:Administrador,Operario');
 
-
     /*
     |--------------------------------------------------------------------------
     | Centros de acopio
@@ -145,7 +140,6 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('centros-acopio/{id}', [CentroAcopioController::class, 'destroy'])
         ->middleware('rol:Administrador');
 
-
     /*
     |--------------------------------------------------------------------------
     | Maquinarias
@@ -166,5 +160,19 @@ Route::middleware('auth:api')->group(function () {
 
     Route::delete('maquinarias/{id}', [MaquinariaController::class, 'destroy'])
         ->middleware('rol:Administrador,Operario');
+
+    Route::apiResource('cuadrillas', CuadrillaController::class)
+        ->parameters(['cuadrillas' => 'cuadrilla'])
+        ->middleware('rol:Administrador');
+
+    Route::apiResource('incidencias', IncidenciaController::class)
+        ->parameters(['incidencias' => 'incidencia'])
+        ->only(['index', 'show', 'store'])
+        ->middleware('rol:Administrador,Operario,Chofer');
+
+    Route::apiResource('incidencias', IncidenciaController::class)
+        ->parameters(['incidencias' => 'incidencia'])
+        ->only(['update', 'destroy'])
+        ->middleware('rol:Administrador');
 
 });
