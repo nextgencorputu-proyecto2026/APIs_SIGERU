@@ -177,7 +177,11 @@ services:
       context: ../Frontend_SIGERU
 
     depends_on:
-      api:
+      api-usuarios:
+        condition: service_healthy
+      api-gestion:
+        condition: service_healthy
+      api-recoleccion:
         condition: service_healthy
 
     ports:
