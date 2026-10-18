@@ -1,5 +1,9 @@
+
 services:
 
+  # ==========================================
+  # API ORIGINAL DE SIGERU
+  # ==========================================
   api:
     build:
       context: .
@@ -39,6 +43,135 @@ services:
     restart: unless-stopped
 
 
+  # ==========================================
+  # API DE USUARIOS
+  # ==========================================
+  api-usuarios:
+    build:
+      context: ./api-usuarios
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8001
+      APP_KEY: "${USUARIOS_APP_KEY:?Definir USUARIOS_APP_KEY}"
+      JWT_SECRET: "${USUARIOS_JWT_SECRET:?Definir USUARIOS_JWT_SECRET}"
+
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: proyecto_sigeru
+      DB_USERNAME: "${SIGERU_DB_USERNAME:?Definir SIGERU_DB_USERNAME}"
+      DB_PASSWORD: "${SIGERU_DB_PASSWORD:?Definir SIGERU_DB_PASSWORD}"
+
+    ports:
+      - "8001:80"
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1/api/health > /dev/null || exit 1"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+    restart: unless-stopped
+
+
+  # ==========================================
+  # API DE GESTION
+  # ==========================================
+  api-gestion:
+    build:
+      context: ./api-gestion
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8002
+      APP_KEY: "${GESTION_APP_KEY:?Definir GESTION_APP_KEY}"
+      JWT_SECRET: "${USUARIOS_JWT_SECRET:?Definir USUARIOS_JWT_SECRET}"
+
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: proyecto_sigeru
+      DB_USERNAME: "${SIGERU_DB_USERNAME:?Definir SIGERU_DB_USERNAME}"
+      DB_PASSWORD: "${SIGERU_DB_PASSWORD:?Definir SIGERU_DB_PASSWORD}"
+
+    ports:
+      - "8002:80"
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1/api/health > /dev/null || exit 1"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+    restart: unless-stopped
+
+
+  # ==========================================
+  # API DE RECOLECCION
+  # ==========================================
+  api-recoleccion:
+    build:
+      context: ./api-recoleccion
+
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+    environment:
+      APP_ENV: local
+      APP_DEBUG: "true"
+      APP_URL: http://localhost:8003
+      APP_KEY: "${RECOLECCION_APP_KEY:?Definir RECOLECCION_APP_KEY}"
+      JWT_SECRET: "${USUARIOS_JWT_SECRET:?Definir USUARIOS_JWT_SECRET}"
+
+      DB_CONNECTION: mysql
+      DB_HOST: mysql
+      DB_PORT: 3306
+      DB_DATABASE: proyecto_sigeru
+      DB_USERNAME: "${SIGERU_DB_USERNAME:?Definir SIGERU_DB_USERNAME}"
+      DB_PASSWORD: "${SIGERU_DB_PASSWORD:?Definir SIGERU_DB_PASSWORD}"
+
+    ports:
+      - "8003:80"
+
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://127.0.0.1/api/health > /dev/null || exit 1"
+        ]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 20s
+
+    restart: unless-stopped
+
+
+  # ==========================================
+  # FRONTEND DE SIGERU
+  # ==========================================
   ui:
     build:
       context: ../Frontend_SIGERU
@@ -64,12 +197,12 @@ services:
     restart: unless-stopped
 
 
+  # ==========================================
+  # BASE DE DATOS MYSQL
+  # ==========================================
   mysql:
     image: mysql:8.4
 
-    # El esquema legado usa nombres de tabla en mayúsculas, mientras Laravel
-    # los consulta en minúsculas. Mantiene el mismo comportamiento en Windows
-    # y en el contenedor Linux.
     command: --lower-case-table-names=1
 
     environment:
@@ -96,5 +229,8 @@ services:
     restart: unless-stopped
 
 
+# ==========================================
+# VOLUMEN PERSISTENTE DE MYSQL
+# ==========================================
 volumes:
   mysql_data:
