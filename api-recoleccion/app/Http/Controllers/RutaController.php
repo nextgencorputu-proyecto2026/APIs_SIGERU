@@ -56,6 +56,7 @@ class RutaController extends Controller
         ], 201);
     }
 
+
     public function update(Request $request, $id)
     {
         $ruta = Ruta::findOrFail($id);
@@ -73,6 +74,25 @@ class RutaController extends Controller
             ], 422);
         }
 
+        // Verificar si se intenta cambiar el tipo de residuo.
+        if (
+            isset($validated['tipoResiduo']) &&
+            $validated['tipoResiduo'] !== $ruta->tipoResiduo
+        ) {
+            // Comprobar si existen contenedores incompatibles asociados.
+            $tieneContenedores = DB::table('contenedor')
+                ->where('idRuta', $ruta->idRuta)
+                ->where('tipo', '!=', $validated['tipoResiduo'])
+                ->exists();
+
+            if ($tieneContenedores) {
+                return response()->json([
+                    'success' => false,
+                    'mensaje' => 'No se puede cambiar el tipo de residuo de la ruta porque tiene contenedores incompatibles asociados.'
+                ], 409);
+            }
+        }
+
         DB::table('ruta')
             ->where('idRuta', $ruta->idRuta)
             ->update($validated);
@@ -83,6 +103,7 @@ class RutaController extends Controller
             'data' => $ruta->fresh()
         ]);
     }
+
 
     public function destroy($id)
     {
