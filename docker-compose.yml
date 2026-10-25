@@ -140,7 +140,7 @@ services:
 
     environment:
       APP_ENV: local
-      APP_DEBUG: "true"
+      APP_DEBUG: "false"
       APP_URL: http://localhost:8003
       APP_KEY: "${RECOLECCION_APP_KEY:?Definir RECOLECCION_APP_KEY}"
       JWT_SECRET: "${USUARIOS_JWT_SECRET:?Definir USUARIOS_JWT_SECRET}"
