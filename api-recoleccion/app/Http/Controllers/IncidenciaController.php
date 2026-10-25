@@ -63,18 +63,52 @@ class IncidenciaController extends Controller
     }
 
 
+
     public function update(Request $request, Incidencia $incidencia): JsonResponse
     {
         $validated = $this->validar($request);
 
-        DB::transaction(function () use ($request, $incidencia, $validated) {
-            $locked = Incidencia::whereKey($incidencia->getKey())->lockForUpdate()->firstOrFail();
+        $estadoAnterior = $incidencia->estado;
+
+        DB::transaction(function () use ($request, $incidencia, $validated, &$estadoAnterior) {
+            $locked = Incidencia::whereKey($incidencia->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $estadoAnterior = $locked->estado;
+
             $this->guardar($locked, $validated, $request);
-            $locked->controladores()->syncWithoutDetaching([$request->user('api')->idUsu]);
+
+            $locked->controladores()->syncWithoutDetaching([
+                $request->user('api')->idUsu
+            ]);
         });
 
-        return response()->json(['success' => true, 'mensaje' => 'Incidencia actualizada correctamente', 'data' => $this->datos($incidencia->fresh(self::RELATIONS))]);
+        $incidenciaActualizada = $incidencia->fresh(self::RELATIONS);
+
+        if (
+            $estadoAnterior !== 'Resuelta'
+            && $incidenciaActualizada->estado === 'Resuelta'
+        ) {
+            $elemento = $incidenciaActualizada->vehiculos->first()
+                ? 'Vehículo'
+                : 'Contenedor';
+
+            $mensaje = "Incidencia resuelta en SiGeRU\n"
+                . "ID: {$incidenciaActualizada->idIncidencia}\n"
+                . "Tipo: {$incidenciaActualizada->tipo}\n"
+                . "Elemento: {$elemento}";
+
+            app(TelegramService::class)->enviarMensaje($mensaje);
+        }
+
+        return response()->json([
+            'success' => true,
+            'mensaje' => 'Incidencia actualizada correctamente',
+            'data' => $this->datos($incidenciaActualizada)
+        ]);
     }
+
 
     private function validar(Request $request): array
     {
