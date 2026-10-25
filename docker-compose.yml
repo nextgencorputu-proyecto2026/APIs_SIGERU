@@ -144,6 +144,8 @@ services:
       APP_URL: http://localhost:8003
       APP_KEY: "${RECOLECCION_APP_KEY:?Definir RECOLECCION_APP_KEY}"
       JWT_SECRET: "${USUARIOS_JWT_SECRET:?Definir USUARIOS_JWT_SECRET}"
+      TELEGRAM_BOT_TOKEN: "${TELEGRAM_BOT_TOKEN:-}"
+      TELEGRAM_CHAT_ID: "${TELEGRAM_CHAT_ID:-}"
 
       DB_CONNECTION: mysql
       DB_HOST: mysql
