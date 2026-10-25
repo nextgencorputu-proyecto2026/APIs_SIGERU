@@ -12,6 +12,7 @@ use Illuminate\Validation\Rule;
 use Illuminate\Support\Carbon;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
+use App\Services\TelegramService;
 
 class IncidenciaController extends Controller
 {
@@ -19,13 +20,14 @@ class IncidenciaController extends Controller
 
     public function index(): JsonResponse
     {
-        return response()->json(['success' => true, 'data' => Incidencia::with(self::RELATIONS)->orderByDesc('idIncidencia')->get()->map(fn ($incidencia) => $this->datos($incidencia))->values()]);
+        return response()->json(['success' => true, 'data' => Incidencia::with(self::RELATIONS)->orderByDesc('idIncidencia')->get()->map(fn($incidencia) => $this->datos($incidencia))->values()]);
     }
 
     public function show(Incidencia $incidencia): JsonResponse
     {
         return response()->json(['success' => true, 'data' => $this->datos($incidencia->load(self::RELATIONS))]);
     }
+
 
     public function store(Request $request): JsonResponse
     {
@@ -39,21 +41,74 @@ class IncidenciaController extends Controller
             return $incidencia;
         });
 
-        return response()->json(['success' => true, 'mensaje' => 'Incidencia creada correctamente', 'data' => $this->datos($incidencia->load(self::RELATIONS))], 201);
+        // Notificar a Telegram una vez confirmada la transaccion.
+        $elemento = $incidencia->vehiculos()->exists()
+            ? 'Vehiculo'
+            : 'Contenedor';
+
+        $mensaje = "Nueva incidencia registrada en SiGeRU\n"
+            . "ID: {$incidencia->idIncidencia}\n"
+            . "Tipo: {$incidencia->tipo}\n"
+            . "Prioridad: {$incidencia->prioridad}\n"
+            . "Estado: {$incidencia->estado}\n"
+            . "Elemento: {$elemento}";
+
+        app(TelegramService::class)->enviarMensaje($mensaje);
+
+        return response()->json([
+            'success' => true,
+            'mensaje' => 'Incidencia creada correctamente',
+            'data' => $this->datos($incidencia->load(self::RELATIONS))
+        ], 201);
     }
+
+
 
     public function update(Request $request, Incidencia $incidencia): JsonResponse
     {
         $validated = $this->validar($request);
 
-        DB::transaction(function () use ($request, $incidencia, $validated) {
-            $locked = Incidencia::whereKey($incidencia->getKey())->lockForUpdate()->firstOrFail();
+        $estadoAnterior = $incidencia->estado;
+
+        DB::transaction(function () use ($request, $incidencia, $validated, &$estadoAnterior) {
+            $locked = Incidencia::whereKey($incidencia->getKey())
+                ->lockForUpdate()
+                ->firstOrFail();
+
+            $estadoAnterior = $locked->estado;
+
             $this->guardar($locked, $validated, $request);
-            $locked->controladores()->syncWithoutDetaching([$request->user('api')->idUsu]);
+
+            $locked->controladores()->syncWithoutDetaching([
+                $request->user('api')->idUsu
+            ]);
         });
 
-        return response()->json(['success' => true, 'mensaje' => 'Incidencia actualizada correctamente', 'data' => $this->datos($incidencia->fresh(self::RELATIONS))]);
+        $incidenciaActualizada = $incidencia->fresh(self::RELATIONS);
+
+        if (
+            $estadoAnterior !== 'Resuelta'
+            && $incidenciaActualizada->estado === 'Resuelta'
+        ) {
+            $elemento = $incidenciaActualizada->vehiculos->first()
+                ? 'Vehículo'
+                : 'Contenedor';
+
+            $mensaje = "Incidencia resuelta en SiGeRU\n"
+                . "ID: {$incidenciaActualizada->idIncidencia}\n"
+                . "Tipo: {$incidenciaActualizada->tipo}\n"
+                . "Elemento: {$elemento}";
+
+            app(TelegramService::class)->enviarMensaje($mensaje);
+        }
+
+        return response()->json([
+            'success' => true,
+            'mensaje' => 'Incidencia actualizada correctamente',
+            'data' => $this->datos($incidenciaActualizada)
+        ]);
     }
+
 
     private function validar(Request $request): array
     {
@@ -99,12 +154,12 @@ class IncidenciaController extends Controller
             throw ValidationException::withMessages(['idVehiculo' => 'Debe indicar exactamente un vehículo o un contenedor.']);
         }
         $tipo = $data['tipo'] ?? $incidencia->tipo;
-        if (! in_array($tipo, $idVehiculo !== null ? Incidencia::TIPOS_VEHICULO : Incidencia::TIPOS_CONTENEDOR, true)) {
+        if (!in_array($tipo, $idVehiculo !== null ? Incidencia::TIPOS_VEHICULO : Incidencia::TIPOS_CONTENEDOR, true)) {
             throw ValidationException::withMessages(['tipo' => 'El tipo de incidencia no corresponde al elemento reportado.']);
         }
         $estado = $data['estado'] ?? $incidencia->estado ?? 'Pendiente';
         $administrador = Usuario::findOrFail($request->user('api')->idUsu)->tipo === 'Administrador';
-        if (! $administrador && ($estado !== 'Pendiente' || array_key_exists('idCuadrilla', $data))) {
+        if (!$administrador && ($estado !== 'Pendiente' || array_key_exists('idCuadrilla', $data))) {
             throw ValidationException::withMessages(['estado' => 'Solo un administrador puede asignar cuadrillas o cambiar el estado.']);
         }
         $atencion = DB::table('atiende')->where('idIncidencia', $incidencia->getKey())->whereNull('fechaHoraFin')->first();
@@ -114,31 +169,33 @@ class IncidenciaController extends Controller
         if ($estado === 'Resuelta' && array_key_exists('idCuadrilla', $data)) {
             throw ValidationException::withMessages(['idCuadrilla' => 'No se puede asignar una incidencia resuelta.']);
         }
-        if ($estado === 'En curso' && ! $atencion && empty($data['idCuadrilla'])) {
+        if ($estado === 'En curso' && !$atencion && empty($data['idCuadrilla'])) {
             throw ValidationException::withMessages(['estado' => 'Para iniciar la atención debe asignar una cuadrilla.']);
         }
-        if ($incidencia->exists && $incidencia->cuadrillas->isNotEmpty()
+        if (
+            $incidencia->exists && $incidencia->cuadrillas->isNotEmpty()
             && ((int) $idVehiculo !== (int) $incidencia->vehiculos->first()?->idVehiculo
-                || (int) $idContenedor !== (int) $incidencia->contenedores->first()?->idContenedor)) {
+                || (int) $idContenedor !== (int) $incidencia->contenedores->first()?->idContenedor)
+        ) {
             throw ValidationException::withMessages(['idVehiculo' => 'No se puede cambiar el elemento de una incidencia con historial de atención.']);
         }
         $cuadrilla = null;
         $vehiculoAtencion = null;
-        if (! empty($data['idCuadrilla'])) {
+        if (!empty($data['idCuadrilla'])) {
             $cuadrilla = Cuadrilla::whereKey($data['idCuadrilla'])->lockForUpdate()->firstOrFail();
             $vehiculoAtencion = $cuadrilla->vehiculos()->lockForUpdate()->first();
-            if (! $vehiculoAtencion || $vehiculoAtencion->estado !== 'Disponible') {
+            if (!$vehiculoAtencion || $vehiculoAtencion->estado !== 'Disponible') {
                 throw ValidationException::withMessages(['idCuadrilla' => 'La cuadrilla debe tener un vehículo disponible.']);
             }
             if ($atencion && (int) $atencion->idCuadrilla !== (int) $cuadrilla->getKey()) {
                 throw ValidationException::withMessages(['idCuadrilla' => 'La incidencia ya tiene una atención activa. Resuélvala antes de asignar otra.']);
             }
             $ocupado = DB::table('atiende')->whereNull('fechaHoraFin')->where('idIncidencia', '<>', $incidencia->getKey() ?? 0)
-                ->where(fn ($q) => $q->where('idCuadrilla', $cuadrilla->getKey())->orWhere('idVehiculo', $vehiculoAtencion->getKey()))->exists();
+                ->where(fn($q) => $q->where('idCuadrilla', $cuadrilla->getKey())->orWhere('idVehiculo', $vehiculoAtencion->getKey()))->exists();
             $ocupado = $ocupado || DB::table('cumple_recoleccion')->whereNull('fechaHoraFin')
-                ->where(fn ($q) => $q->where('idCuadrilla', $cuadrilla->getKey())->orWhere('idVehiculo', $vehiculoAtencion->getKey()))->exists()
+                ->where(fn($q) => $q->where('idCuadrilla', $cuadrilla->getKey())->orWhere('idVehiculo', $vehiculoAtencion->getKey()))->exists()
                 || DB::table('cumple_barredora')->whereNull('fechaHoraFin')
-                    ->where(fn ($q) => $q->where('idCuadrilla', $cuadrilla->getKey())->orWhere('idVehiculo', $vehiculoAtencion->getKey()))->exists();
+                    ->where(fn($q) => $q->where('idCuadrilla', $cuadrilla->getKey())->orWhere('idVehiculo', $vehiculoAtencion->getKey()))->exists();
             if ($ocupado) {
                 throw ValidationException::withMessages(['idCuadrilla' => 'La cuadrilla o su vehículo tiene otra operación en curso.']);
             }
@@ -157,7 +214,7 @@ class IncidenciaController extends Controller
         $incidencia->save();
         $incidencia->vehiculos()->sync($idVehiculo !== null ? [$idVehiculo] : []);
         $incidencia->contenedores()->sync($idContenedor !== null ? [$idContenedor] : []);
-        if ($cuadrilla && ! $atencion) {
+        if ($cuadrilla && !$atencion) {
             $incidencia->cuadrillas()->attach($cuadrilla->getKey(), ['idVehiculo' => $vehiculoAtencion->getKey(), 'fechaHoraIni' => now()]);
         }
         if ($estado === 'Resuelta') {
@@ -177,7 +234,7 @@ class IncidenciaController extends Controller
                 $incidencia->delete();
             });
         } catch (QueryException $e) {
-            if (! in_array((int) ($e->errorInfo[1] ?? 0), [1451, 19], true)) {
+            if (!in_array((int) ($e->errorInfo[1] ?? 0), [1451, 19], true)) {
                 throw $e;
             }
 
