@@ -31,8 +31,13 @@ Route::middleware('auth:api')->group(function () {
     | Rutas de recolección
     |--------------------------------------------------------------------------
     */
-
     // Listar todas las rutas y filtrar por tipo de residuo
+
+    // Consultar las rutas asignadas al Chofer autenticado
+    Route::get('mis-rutas', [RutaController::class, 'misRutas'])
+        ->middleware('rol:Chofer');
+        
+    // Consultar las rutas asignadas al Chofer autenticado
     Route::get('rutas', [RutaController::class, 'index'])
         ->middleware('rol:Administrador,Operario');
 

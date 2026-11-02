@@ -24,6 +24,10 @@ class Credenciales extends Authenticatable implements JWTSubject
     protected $hidden = [
         'contrasena',
     ];
+    public function usuario()
+    {
+        return $this->belongsTo(Usuario::class, 'idUsu', 'idUsu');
+    }
 
     public function getAuthPasswordName(): string
     {

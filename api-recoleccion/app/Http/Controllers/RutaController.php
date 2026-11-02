@@ -140,4 +140,53 @@ class RutaController extends Controller
             'mensaje' => 'Ruta eliminada correctamente'
         ]);
     }
+
+    public function misRutas(Request $request)
+    {
+        $idChofer = $request->user('api')->idUsu;
+
+        $rutas = DB::table('ruta')
+            ->join('asigna_ruta', 'ruta.idRuta', '=', 'asigna_ruta.idRuta')
+            ->join('integra_cuadrilla', 'asigna_ruta.idCuadrilla', '=', 'integra_cuadrilla.idCuadrilla')
+            ->where('integra_cuadrilla.idUsu', $idChofer)
+            ->select(
+                'ruta.idRuta',
+                'ruta.descripcion',
+                'ruta.horario',
+                'ruta.tipoResiduo'
+            )
+            ->distinct()
+            ->orderBy('ruta.descripcion')
+            ->get();
+
+        $idsRutas = $rutas->pluck('idRuta');
+
+        $contenedores = DB::table('contenedor')
+            ->whereIn('idRuta', $idsRutas)
+            ->get([
+                'idContenedor',
+                'idRuta',
+                'ubicacionX',
+                'ubicacionY'
+            ])
+            ->groupBy('idRuta');
+
+        $resultado = $rutas->map(function ($ruta) use ($contenedores) {
+            return [
+                'idRuta' => $ruta->idRuta,
+                'descripcion' => $ruta->descripcion,
+                'horario' => $ruta->horario,
+                'tipoResiduo' => $ruta->tipoResiduo,
+                'contenedores' => $contenedores
+                    ->get($ruta->idRuta, collect())
+                    ->values()
+            ];
+        });
+
+        return response()->json([
+            'success' => true,
+            'data' => $resultado
+        ]);
+    }
+
 }

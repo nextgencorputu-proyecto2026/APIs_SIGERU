@@ -29,12 +29,24 @@ class AuthController extends Controller
         return $this->tokenResponse($token);
     }
 
+
     public function me(): JsonResponse
     {
+        $credenciales = auth('api')->user();
+
+        $usuario = $credenciales->usuario;
+
         return response()->json([
-            'data' => auth('api')->user(),
+            'data' => [
+                'idUsu' => $credenciales->idUsu,
+                'mail' => $credenciales->mail,
+                'nombre' => $usuario?->nombre1,
+                'apellido' => $usuario?->apellido1,
+                'tipo' => $usuario?->tipo,
+            ],
         ]);
     }
+
 
     public function refresh(): JsonResponse
     {
