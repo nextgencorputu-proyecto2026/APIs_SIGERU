@@ -23,9 +23,13 @@ return new class extends Migration {
         ];
 
         foreach ($tablas as $tabla) {
-            Schema::create($tabla, function (Blueprint $table) {
+            Schema::create($tabla, function (Blueprint $table) use ($tabla) {
                 $table->id();
                 $table->unsignedInteger('idRuta');
+
+                if ($tabla === 'asigna_ruta') {
+                    $table->unsignedInteger('idCuadrilla');
+                }
             });
         }
     }
