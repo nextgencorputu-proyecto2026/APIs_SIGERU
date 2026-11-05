@@ -28,6 +28,100 @@ class IncidenciaController extends Controller
         return response()->json(['success' => true, 'data' => $this->datos($incidencia->load(self::RELATIONS))]);
     }
 
+    public function solicitudVecino(Request $request): JsonResponse
+    {
+        $datos = $request->validate([
+            'nombre' => ['required', 'string', 'min:3', 'max:50'],
+            'correo' => ['required', 'email', 'max:100'],
+            'telefono' => ['required', 'string', 'min:8', 'max:20'],
+            'direccion' => ['required', 'string', 'max:100'],
+            'barrio' => ['required', 'string', 'max:60'],
+            'tipoServicio' => [
+                'required',
+                Rule::in([
+                    'Contenedor Dañado',
+                    'Contenedor Desbordado',
+                    'Recoleccion de Residuos Comunes',
+                    'Recoleccion de Residuos Grandes'
+                ])
+            ],
+            'idContenedor' => [
+                'required_if:tipoServicio,Contenedor Dañado,Contenedor Desbordado',
+                'nullable',
+                'integer',
+                'exists:contenedor,idContenedor'
+            ],
+            'fechaSolicitada' => ['nullable', 'date'],
+            'descripcion' => ['required', 'string', 'min:8', 'max:500']
+        ]);
+
+        $tipoServicio = $datos['tipoServicio'];
+
+        $esIncidencia = in_array($tipoServicio, [
+            'Contenedor Dañado',
+            'Contenedor Desbordado'
+        ], true);
+
+        $incidencia = null;
+
+        if ($esIncidencia) {
+            $tipoIncidencia = $tipoServicio === 'Contenedor Dañado'
+                ? 'Roto'
+                : 'Residuos fuera de contenedor';
+
+            $incidencia = DB::transaction(function () use ($datos, $tipoIncidencia) {
+                $nueva = new Incidencia();
+
+                $nueva->tipo = $tipoIncidencia;
+                $nueva->prioridad = 'Media';
+                $nueva->estado = 'Pendiente';
+                $nueva->fechaCreacion = now();
+                $nueva->fechaResolucion = null;
+
+                $nueva->save();
+
+                $nueva->contenedores()->attach($datos['idContenedor']);
+
+                return $nueva;
+            });
+        }
+
+        $mensaje = "Nueva solicitud de vecino - SiGeRU\n"
+            . "Nombre: {$datos['nombre']}\n"
+            . "Correo: {$datos['correo']}\n"
+            . "Telefono: {$datos['telefono']}\n"
+            . "Direccion: {$datos['direccion']}\n"
+            . "Barrio: {$datos['barrio']}\n"
+            . "Servicio: {$tipoServicio}\n"
+            . "Fecha solicitada: " . ($datos['fechaSolicitada'] ?? 'No indicada') . "\n"
+            . "Descripcion: {$datos['descripcion']}";
+
+        if ($incidencia !== null) {
+            $mensaje .= "\nID incidencia: {$incidencia->idIncidencia}"
+                . "\nID contenedor: {$datos['idContenedor']}"
+                . "\nEstado: Pendiente";
+        }
+
+        $enviado = app(TelegramService::class)->enviarMensaje($mensaje);
+
+        if (!$enviado) {
+            return response()->json([
+                'success' => false,
+                'mensaje' => $incidencia
+                    ? 'La incidencia fue registrada, pero no se pudo enviar la notificacion.'
+                    : 'No se pudo enviar la solicitud. Intente nuevamente.',
+                'idIncidencia' => $incidencia?->idIncidencia
+            ], 503);
+        }
+
+        return response()->json([
+            'success' => true,
+            'mensaje' => 'Solicitud recibida correctamente',
+            'idIncidencia' => $incidencia?->idIncidencia
+        ], 201);
+    }
+
+
 
     public function store(Request $request): JsonResponse
     {

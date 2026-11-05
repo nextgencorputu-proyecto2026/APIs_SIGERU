@@ -10,6 +10,20 @@ use Illuminate\Support\Facades\DB;
 
 class ContenedorController extends Controller
 {
+
+    public function publicos()
+    {
+        $contenedores = Contenedor::query()
+            ->select('idContenedor', 'ubicacionX', 'ubicacionY')
+            ->orderBy('idContenedor')
+            ->get();
+
+        return response()->json([
+            'success' => true,
+            'data' => $contenedores,
+        ]);
+    }
+
     /**
      * Listar todos los contenedores.
      */

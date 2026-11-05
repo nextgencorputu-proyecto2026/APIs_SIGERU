@@ -18,6 +18,13 @@ Route::get('health', function () {
     ]);
 });
 
+// Listar contenedores disponibles para el formulario de vecinos
+Route::get('publico/contenedores', [ContenedorController::class, 'publicos']);
+
+// Recibir solicitudes de vecinos
+Route::post('publico/solicitudes', [IncidenciaController::class, 'solicitudVecino'])
+    ->middleware('throttle:5,1');
+
 /*
 |--------------------------------------------------------------------------
 | Rutas protegidas con JWT
@@ -31,13 +38,12 @@ Route::middleware('auth:api')->group(function () {
     | Rutas de recolección
     |--------------------------------------------------------------------------
     */
-    // Listar todas las rutas y filtrar por tipo de residuo
 
     // Consultar las rutas asignadas al Chofer autenticado
     Route::get('mis-rutas', [RutaController::class, 'misRutas'])
         ->middleware('rol:Chofer');
-        
-    // Consultar las rutas asignadas al Chofer autenticado
+
+    // Consultar todas las rutas
     Route::get('rutas', [RutaController::class, 'index'])
         ->middleware('rol:Administrador,Operario');
 
