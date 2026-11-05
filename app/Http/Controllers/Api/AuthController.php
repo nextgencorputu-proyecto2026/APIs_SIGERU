@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
+use Tymon\JWTAuth\Exceptions\JWTException;
 
 class AuthController extends Controller
 {
@@ -38,9 +39,15 @@ class AuthController extends Controller
 
     public function refresh(): JsonResponse
     {
-        return $this->tokenResponse(
-            auth('api')->refresh()
-        );
+        try {
+            $token = auth('api')->refresh();
+
+            return $this->tokenResponse($token);
+        } catch (JWTException $e) {
+            return response()->json([
+                'message' => 'Token inválido o expirado',
+            ], 401);
+        }
     }
 
     private function tokenResponse(string $token): JsonResponse

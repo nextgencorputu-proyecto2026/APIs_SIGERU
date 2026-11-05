@@ -65,13 +65,20 @@ class CuadrillaApiTest extends TestCase
             $t->unsignedInteger('idCuadrilla');
         });
 
+
         foreach (['atiende', 'cumple_recoleccion', 'cumple_barredora'] as $tabla) {
             Schema::create($tabla, function (Blueprint $t) {
                 $t->increments('id');
                 $t->unsignedInteger('idCuadrilla');
                 $t->dateTime('fechaHoraFin')->nullable();
+
+                $t->foreign('idCuadrilla')
+                    ->references('idCuadrilla')
+                    ->on('cuadrilla')
+                    ->restrictOnDelete();
             });
         }
+
 
         DB::table('usuario')->insert([
             ['idUsu' => 1, 'tipo' => 'Administrador'],
@@ -354,6 +361,84 @@ class CuadrillaApiTest extends TestCase
 
         $this->assertDatabaseCount('integra_cuadrilla', 4);
     }
+
+    public function test_no_permite_eliminar_cuadrilla_con_operaciones_asociadas(): void
+    {
+        $this->administrador();
+
+        $id = $this->postJson('/api/cuadrillas', $this->datosValidos())
+            ->assertCreated()
+            ->json('data.idCuadrilla');
+
+        DB::table('atiende')->insert([
+            'idCuadrilla' => $id,
+            'fechaHoraFin' => null,
+        ]);
+
+        $this->deleteJson("/api/cuadrillas/{$id}")
+            ->assertStatus(409)
+            ->assertJsonPath('success', false);
+
+        $this->assertDatabaseHas('cuadrilla', [
+            'idCuadrilla' => $id,
+        ]);
+
+        $this->assertDatabaseHas('atiende', [
+            'idCuadrilla' => $id,
+        ]);
+    }
+
+    public function test_no_permite_modificar_cuadrilla_durante_recoleccion(): void
+    {
+        $this->administrador();
+
+        $id = $this->postJson('/api/cuadrillas', $this->datosValidos())
+            ->assertCreated()
+            ->json('data.idCuadrilla');
+
+        DB::table('cumple_recoleccion')->insert([
+            'idCuadrilla' => $id,
+            'fechaHoraFin' => null,
+        ]);
+
+        $this->putJson("/api/cuadrillas/{$id}", [
+            'operarios' => [4],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('idCuadrilla');
+
+        $this->assertDatabaseHas('integra_cuadrilla', [
+            'idCuadrilla' => $id,
+            'idUsu' => 5,
+        ]);
+    }
+
+    public function test_no_permite_modificar_cuadrilla_durante_barrido(): void
+    {
+        $this->administrador();
+
+        $id = $this->postJson('/api/cuadrillas', $this->datosValidos())
+            ->assertCreated()
+            ->json('data.idCuadrilla');
+
+        DB::table('cumple_barredora')->insert([
+            'idCuadrilla' => $id,
+            'fechaHoraFin' => null,
+        ]);
+
+        $this->putJson("/api/cuadrillas/{$id}", [
+            'operarios' => [4],
+        ])
+            ->assertUnprocessable()
+            ->assertJsonValidationErrors('idCuadrilla');
+
+        $this->assertDatabaseHas('integra_cuadrilla', [
+            'idCuadrilla' => $id,
+            'idUsu' => 5,
+        ]);
+    }
+
+
 
 
 }
