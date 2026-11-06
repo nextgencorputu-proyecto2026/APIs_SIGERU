@@ -1,116 +1,160 @@
-# Ejecución con Docker
+# Guía de instalación y ejecución de SiGeRU con Docker
 
-Para ejecutar SiGeRU, los repositorios `APIs_SIGERU` y `Frontend_SIGERU` deben estar descargados en la misma carpeta y en la rama `develop`.
+Esta guía explica cómo configurar, iniciar y ejecutar SiGeRU utilizando Docker.
 
-Es necesario tener Docker Desktop instalado y funcionando.
+Los repositorios `APIs_SIGERU` y `Frontend_SIGERU` deben estar ubicados en la misma carpeta y en la rama `develop`.
 
-## Variables de entorno
+## 1. Preparar las variables de entorno
 
-Desde la carpeta `APIs_SIGERU`, copiar el archivo `.env.example` para crear el archivo `.env`:
-
-```powershell
-Copy-Item .env.example .env
-```
-
-Generar las claves necesarias ejecutando los siguientes comandos en PowerShell, desde `APIs_SIGERU`:
+Abrir PowerShell desde la carpeta `APIs_SIGERU` y ejecutar:
 
 ```powershell
-function New-SigeruSecret {
-    param([int]$Bytes = 32)
-    $buffer = [byte[]]::new($Bytes)
-    [System.Security.Cryptography.RandomNumberGenerator]::Fill($buffer)
-    return [Convert]::ToBase64String($buffer)
-}
 
-$usuariosKey = "base64:$(New-SigeruSecret)"
-$gestionKey = "base64:$(New-SigeruSecret)"
-$recoleccionKey = "base64:$(New-SigeruSecret)"
-$jwtSecret = New-SigeruSecret -Bytes 48
+.\preparar-docker.ps1
 
-$envPath = Join-Path (Get-Location) ".env"
-$contenido = Get-Content $envPath -Raw
-
-$contenido = $contenido.Replace("USUARIOS_APP_KEY=", "USUARIOS_APP_KEY=$usuariosKey")
-$contenido = $contenido.Replace("USUARIOS_JWT_SECRET=", "USUARIOS_JWT_SECRET=$jwtSecret")
-$contenido = $contenido.Replace("GESTION_APP_KEY=", "GESTION_APP_KEY=$gestionKey")
-$contenido = $contenido.Replace("RECOLECCION_APP_KEY=", "RECOLECCION_APP_KEY=$recoleccionKey")
-
-[System.IO.File]::WriteAllText($envPath, $contenido)
 ```
 
-Completar también las credenciales de MySQL en `.env`:
+Este script realiza automáticamente las siguientes tareas:
 
-```dotenv
-SIGERU_DB_USERNAME=sigeru
-SIGERU_DB_PASSWORD=sigeru
+- Crea el archivo `.env` a partir de `.env.example` si todavía no existe.
+- Genera las claves necesarias para las APIs de Usuarios, Gestión y Recolección.
+- Configura el secreto JWT compartido para la autenticación.
+- Conserva las claves existentes si el archivo `.env` ya estaba configurado.
+
+No es necesario generar las claves manualmente ni crear archivos `.env` individuales para cada API.
+
+**Si PowerShell bloquea la ejecución del script**, ejecutar:
+
+```powershell
+
+Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
+
 ```
 
-Estas credenciales corresponden a la configuración de desarrollo definida actualmente en `docker-compose.yml`.
+Después, volver a ejecutar:
 
-Las tres APIs utilizan el mismo secreto JWT, mientras que cada API tiene su propia clave Laravel.
+```powershell
 
-No subir el archivo `.env` a GitHub.
+.\preparar-docker.ps1
 
-## Iniciar el proyecto
-
-Desde la carpeta `APIs_SIGERU`:
-
-```bash
-docker compose up --build -d
 ```
 
-Para comprobar el estado de los servicios:
+Este permiso se aplica solamente a la sesión actual de PowerShell.
 
-```bash
+## 2. Iniciar SiGeRU
+
+Desde la carpeta `APIs_SIGERU`, ejecutar:
+
+```powershell
+
+docker compose up -d --build
+
+```
+
+Este comando construye e inicia los contenedores necesarios para ejecutar SiGeRU.
+
+Docker se encarga de preparar las APIs, el frontend y la base de datos MySQL.
+
+La primera ejecución puede demorar algunos minutos mientras se descargan las imágenes y se instalan las dependencias.
+
+## 3. Verificar los contenedores
+
+Una vez finalizada la instalación, ejecutar:
+
+```powershell
+
 docker compose ps
+
 ```
 
-Servicios disponibles:
+Deben aparecer los seis servicios del proyecto:
 
-- Frontend: http://localhost:5173
-- API original: http://localhost:8000/api/health
-- API Usuarios: http://localhost:8001
-- API Gestión: http://localhost:8002
-- API Recolección: http://localhost:8003
-- MySQL: accesible internamente como `mysql:3306`
+- `api`
+- `api-usuarios`
+- `api-gestion`
+- `api-recoleccion`
+- `ui`
+- `mysql`
 
-El primer inicio importa `proyecto_sigeru.sql` cuando el volumen de MySQL está vacío.
+Los servicios deberían aparecer en estado de ejecución y, una vez completado el inicio, como saludables (`healthy`).
 
-Las tres APIs comparten la base de datos `proyecto_sigeru`. Sus scripts de inicio no ejecutan automáticamente las migraciones de Laravel.
+## 4. Acceder a SiGeRU
 
-## Detener y reiniciar
+Abrir el navegador e ingresar a:
 
-Para detener los servicios sin eliminar los datos:
+**http://localhost:5173**
 
-```bash
+También se encuentran disponibles los siguientes servicios:
+
+| Servicio | Dirección |
+|---|---|
+| Frontend SiGeRU | http://localhost:5173 |
+| API original | http://localhost:8000/api/health |
+| API Usuarios | http://localhost:8001 |
+| API Gestión | http://localhost:8002 |
+| API Recolección | http://localhost:8003 |
+
+La base de datos MySQL funciona dentro de Docker y no necesita iniciarse manualmente.
+
+## 5. Base de datos
+
+SiGeRU utiliza la base de datos MySQL `proyecto_sigeru`.
+
+En la primera ejecución, cuando el volumen de MySQL está vacío, Docker importa automáticamente el archivo:
+
+`proyecto_sigeru.sql`
+
+Este archivo contiene la estructura y los datos iniciales del proyecto.
+
+La API original ejecuta automáticamente las migraciones pendientes de Laravel al iniciar.
+
+Las APIs de Usuarios, Gestión y Recolección no ejecutan migraciones automáticamente durante su arranque.
+
+Las migraciones específicas de testing se utilizan para las pruebas automatizadas y no forman parte de la inicialización normal de la base de datos.
+
+No es necesario importar manualmente el archivo SQL ni crear la base de datos desde phpMyAdmin.
+
+## 6. Detener y reiniciar SiGeRU
+
+Para detener los contenedores sin eliminar los datos:
+
+```powershell
 docker compose down
 ```
 
-Para volver a iniciarlos:
+Para volver a iniciar el proyecto:
 
-```bash
+```powershell
 docker compose up -d
 ```
 
-Para reconstruir las imágenes después de actualizar el proyecto:
+Para reconstruir los contenedores después de realizar cambios o actualizar el proyecto:
 
-```bash
-docker compose up --build -d
+```powershell
+docker compose up -d --build
 ```
 
-Para reinicializar completamente la base de desarrollo:
+## 7. Reiniciar completamente la base de datos
 
-```bash
+Si es necesario reinicializar el entorno de desarrollo desde cero, se pueden ejecutar:
+
+```powershell
 docker compose down -v
-docker compose up --build -d
+docker compose up -d --build
 ```
 
-**Importante:** la opción `down -v` elimina todos los datos del volumen de MySQL. No debe utilizarse si se necesitan conservar.
+**IMPORTANTE:** el comando `docker compose down -v` elimina el volumen de MySQL y todos los datos almacenados en él.
 
-## Secretos
+Utilizarlo únicamente cuando se quiera reiniciar completamente la base de datos y no sea necesario conservar la información existente.
 
-Las claves `APP_KEY` y `JWT_SECRET` deben generarse para cada instalación y almacenarse en el archivo `.env` ubicado junto a `docker-compose.yml`.
+## 8. Consideraciones importantes
 
-En un despliegue real deben utilizarse contraseñas seguras y evitar los valores de desarrollo definidos en Docker Compose.
+- Ejecutar los comandos de Docker Compose desde la carpeta `APIs_SIGERU`.
+- Mantener ambos repositorios en carpetas hermanas.
+- No modificar ni subir el archivo `.env` a GitHub.
+- Las claves Laravel y JWT se generan automáticamente mediante `preparar-docker.ps1`.
+- Las tres APIs de Usuarios, Gestión y Recolección comparten el mismo secreto JWT.
+- Para utilizar las notificaciones de Telegram, configurar `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en el `.env` principal.
+- No es necesario instalar XAMPP, PHP, Composer ni MySQL por separado.
 
-Nunca subir archivos `.env` con claves o contraseñas reales a GitHub.
+Esta configuración está destinada al desarrollo y las pruebas locales de SiGeRU. Para un despliegue público se deben utilizar credenciales seguras y una configuración apropiada para producción.
