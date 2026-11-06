@@ -6,15 +6,15 @@ Los repositorios `APIs_SIGERU` y `Frontend_SIGERU` deben estar ubicados en la mi
 
 ## 1. Preparar las variables de entorno
 
-Abrir PowerShell desde la carpeta `APIs_SIGERU` y ejecutar:
+Ejecutar el script correspondiente al sistema operativo desde la carpeta `APIs_SIGERU`.
 
-```powershell
+En Linux, se necesita `openssl` instalado:
 
-.\preparar-docker.ps1
-
+```bash
+bash ./preparar-docker.sh
 ```
 
-Este script realiza automáticamente las siguientes tareas:
+El scripts realiza las siguientes tareas:
 
 - Crea el archivo `.env` a partir de `.env.example` si todavía no existe.
 - Genera las claves necesarias para las APIs de Usuarios, Gestión y Recolección.
@@ -23,29 +23,12 @@ Este script realiza automáticamente las siguientes tareas:
 
 No es necesario generar las claves manualmente ni crear archivos `.env` individuales para cada API.
 
-**Si PowerShell bloquea la ejecución del script**, ejecutar:
-
-```powershell
-
-Set-ExecutionPolicy -Scope Process -ExecutionPolicy RemoteSigned
-
-```
-
-Después, volver a ejecutar:
-
-```powershell
-
-.\preparar-docker.ps1
-
-```
-
-Este permiso se aplica solamente a la sesión actual de PowerShell.
 
 ## 2. Iniciar SiGeRU
 
 Desde la carpeta `APIs_SIGERU`, ejecutar:
 
-```powershell
+```bash
 
 docker compose up -d --build
 
@@ -61,7 +44,7 @@ La primera ejecución puede demorar algunos minutos mientras se descargan las im
 
 Una vez finalizada la instalación, ejecutar:
 
-```powershell
+```bash
 
 docker compose ps
 
@@ -118,19 +101,19 @@ No es necesario importar manualmente el archivo SQL ni crear la base de datos de
 
 Para detener los contenedores sin eliminar los datos:
 
-```powershell
+```bash
 docker compose down
 ```
 
 Para volver a iniciar el proyecto:
 
-```powershell
+```bash
 docker compose up -d
 ```
 
 Para reconstruir los contenedores después de realizar cambios o actualizar el proyecto:
 
-```powershell
+```bash
 docker compose up -d --build
 ```
 
@@ -138,7 +121,7 @@ docker compose up -d --build
 
 Si es necesario reinicializar el entorno de desarrollo desde cero, se pueden ejecutar:
 
-```powershell
+```bash
 docker compose down -v
 docker compose up -d --build
 ```
@@ -152,9 +135,7 @@ Utilizarlo únicamente cuando se quiera reiniciar completamente la base de datos
 - Ejecutar los comandos de Docker Compose desde la carpeta `APIs_SIGERU`.
 - Mantener ambos repositorios en carpetas hermanas.
 - No modificar ni subir el archivo `.env` a GitHub.
-- Las claves Laravel y JWT se generan automáticamente mediante `preparar-docker.ps1`.
+- Las claves Laravel y JWT se generan automáticamente mediante `preparar-docker.sh`.
 - Las tres APIs de Usuarios, Gestión y Recolección comparten el mismo secreto JWT.
 - Para utilizar las notificaciones de Telegram, configurar `TELEGRAM_BOT_TOKEN` y `TELEGRAM_CHAT_ID` en el `.env` principal.
 - No es necesario instalar XAMPP, PHP, Composer ni MySQL por separado.
-
-Esta configuración está destinada al desarrollo y las pruebas locales de SiGeRU. Para un despliegue público se deben utilizar credenciales seguras y una configuración apropiada para producción.
