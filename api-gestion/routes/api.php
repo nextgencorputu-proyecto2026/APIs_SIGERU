@@ -43,15 +43,15 @@ Route::middleware('auth:api')->group(function () {
     Route::delete('camiones/{id}', [CamionController::class, 'destroy'])
         ->middleware('rol:Administrador');
 
-    // CENTROS DE ACOPIO - Solo Administrador
+    // CENTROS DE ACOPIO - Consulta: Administrador y Operario (la necesita Maquinaria). Altas, cambios y bajas: solo Administrador
     Route::get('centros-acopio', [CentroAcopioController::class, 'index'])
-        ->middleware('rol:Administrador');
+        ->middleware('rol:Administrador,Operario');
 
     Route::post('centros-acopio', [CentroAcopioController::class, 'store'])
         ->middleware('rol:Administrador');
 
     Route::get('centros-acopio/{id}', [CentroAcopioController::class, 'show'])
-        ->middleware('rol:Administrador');
+        ->middleware('rol:Administrador,Operario');
 
     Route::put('centros-acopio/{id}', [CentroAcopioController::class, 'update'])
         ->middleware('rol:Administrador');
