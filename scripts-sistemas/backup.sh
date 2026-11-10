@@ -3,6 +3,8 @@
 RUTA=$(cd "$(dirname "$0")" && pwd)
 source "$RUTA/config.conf"
 
+mkdir -p "$DIR_RESPALDOS"
+
 FECHA=$(date +%Y-%m-%d_%H-%M-%S)
 ARCHIVO=backup_sigeru_$FECHA
 SSH_OPCIONES="-i $SERVIDOR3_LLAVE -o BatchMode=yes -o ConnectTimeout=10"

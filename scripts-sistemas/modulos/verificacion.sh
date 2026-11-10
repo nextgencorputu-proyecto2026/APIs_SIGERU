@@ -1,13 +1,13 @@
 SSH_S3="-i $SERVIDOR3_LLAVE -o BatchMode=yes -o ConnectTimeout=5"
 
 function ip_correcta() { ip a | grep -q "$IP_SERVIDOR/"; }
-function ssh_activo() { systemctl is-active --quiet ssh; }
-function firewall_activo() { sudo ufw status | grep -q "Status: active"; }
-function hora_sincronizada() { timedatectl | grep -q "synchronized: yes"; }
+function ssh_activo() { systemctl is-active --quiet ssh || systemctl is-active --quiet ssh.socket; }
+function firewall_activo() { sudo ufw status | grep -q -E "Status: active|Estado: activo"; }
+function hora_sincronizada() { timedatectl show -p NTPSynchronized --value | grep -q "yes"; }
 function docker_activo() { systemctl is-active --quiet docker; }
 function mysql_corriendo() { sudo docker ps | grep -q "$CONTENEDOR_DB"; }
 function cron_configurado() { sudo crontab -l | grep -q "backup.sh"; }
-function respaldo_de_hoy() { ls "$DIR_RESPALDOS" | grep -q "backup_sigeru_$(date +%F)"; }
+function respaldo_de_hoy() { ls "$DIR_RESPALDOS" 2>/dev/null | grep -q "backup_sigeru_$(date +%F)"; }
 function disco_suficiente() { ! df -h / | grep -q -E " (9[0-9]|100)% "; }
 function mysql_solo_local() { ! sudo ss -tulpn | grep -q -E "(0.0.0.0|\[::\]):3306 "; }
 function servidor3_accesible() { sudo ssh $SSH_S3 "$SERVIDOR3_USUARIO@$SERVIDOR3_IP" true; }
