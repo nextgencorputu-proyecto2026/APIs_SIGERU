@@ -5,11 +5,13 @@ Scripts de administración del servidor (Administración de Sistemas Operativos)
 ## Contenido
 
 - `servidor.sh`: menú de administración (monitoreo, logs, respaldos, firewall, usuarios, grupos, redes, base de datos, contenedores y verificación).
-- `backup.sh`: respaldo de la base en `.tar.gz` y copia a la VM respaldo.
-- `restaurar.sh`: restauración desde un respaldo local o de la VM respaldo.
-- `config.conf`: variables (contenedor, IPs, rutas).
+- `backup.sh`: respaldo de la base en `.tar.gz` en la carpeta `respaldos`. Lo ejecuta el cron todos los días a las 2:00 y al iniciar el servidor.
+- `restaurar.sh`: restauración de la base desde un respaldo de la carpeta `respaldos`.
+- `config.conf`: variables (contenedor, IP, rutas y retención).
 - `modulos/`: un archivo por cada opción del menú.
-- `instalacion/respaldo.sh` y `instalacion/restaurar.sh`: respaldo y restauración en `.tar.gz` sin VM respaldo, para usar en la instalación. Se copian dentro de `APIs_SIGERU` y se ejecutan desde ahí.
+- `instalacion/respaldo.sh` y `instalacion/restaurar.sh`: respaldo y restauración en `.tar.gz` para usar en la instalación. Se copian dentro de `APIs_SIGERU` y se ejecutan desde ahí.
+
+El respaldo principal del sistema lo hace el contenedor `respaldo` (carpeta `respaldo/` de `APIs_SIGERU`), que genera una copia al iniciar y cada 24 horas en su propio volumen y permite restaurarla.
 
 ## Uso
 
