@@ -234,6 +234,42 @@ services:
 
     restart: unless-stopped
 
+  # ==========================================
+  # PHPMYADMIN PARA ADMINISTRAR LA BASE DE DATOS
+  # ==========================================
+  phpmyadmin:
+    image: phpmyadmin:5.2.3
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: "3306"
+    ports:
+      - "8080:80"
+    restart: unless-stopped
+
+  # ==========================================
+  # RESALDO DE BASE DE DATOS
+  # ==========================================
+  respaldo:
+    build:
+      context: ./respaldo
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      DB_HOST: mysql
+      DB_NAME: proyecto_sigeru
+      DB_USER: "${SIGERU_DB_USERNAME:?Definir SIGERU_DB_USERNAME}"
+      DB_PASSWORD: "${SIGERU_DB_PASSWORD:?Definir SIGERU_DB_PASSWORD}"
+    volumes:
+      - ../servidor3-respaldos:/respaldos
+    entrypoint: ["/bin/bash", "-c"]
+    command:
+      - 'while true; do /respaldo.sh crear || echo "ERROR: respaldo fallido" >&2; sleep 86400; done'
+    restart: unless-stopped
+
 
 # ==========================================
 # VOLUMEN PERSISTENTE DE MYSQL
