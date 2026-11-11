@@ -204,6 +204,39 @@ services:
 
 
   # ==========================================
+  # PHPMYADMIN (administracion de MySQL)
+  # ==========================================
+  phpmyadmin:
+    image: phpmyadmin:5.2
+    environment:
+      PMA_HOST: mysql
+    ports:
+      - "8080:80"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ==========================================
+  # SERVICIO DE RESPALDO Y RECUPERACION
+  # ==========================================
+  respaldo:
+    build:
+      context: ./respaldo
+    environment:
+      MYSQL_HOST: mysql
+      MYSQL_PWD: ${MYSQL_ROOT_PASSWORD:-root}
+      BASE: proyecto_sigeru
+      INTERVALO: 86400
+      DIAS_RETENCION: 7
+    volumes:
+      - respaldos_data:/respaldos
+    depends_on:
+      mysql:
+        condition: service_healthy
+    restart: unless-stopped
+
+  # ==========================================
   # BASE DE DATOS MYSQL
   # ==========================================
   mysql:
@@ -236,7 +269,8 @@ services:
 
 
 # ==========================================
-# VOLUMEN PERSISTENTE DE MYSQL
+# VOLUMENES PERSISTENTES (MYSQL Y RESPALDOS)
 # ==========================================
 volumes:
   mysql_data:
+  respaldos_data:

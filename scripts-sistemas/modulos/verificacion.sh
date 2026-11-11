@@ -1,4 +1,3 @@
-SSH_S3="-i $SERVIDOR3_LLAVE -o BatchMode=yes -o ConnectTimeout=5"
 
 function ip_correcta() { ip a | grep -q "$IP_SERVIDOR/"; }
 function ssh_activo() { systemctl is-active --quiet ssh || systemctl is-active --quiet ssh.socket; }
@@ -10,10 +9,10 @@ function cron_configurado() { sudo crontab -l | grep -q "backup.sh"; }
 function respaldo_de_hoy() { ls "$DIR_RESPALDOS" 2>/dev/null | grep -q "backup_sigeru_$(date +%F)"; }
 function disco_suficiente() { ! df -h / | grep -q -E " (9[0-9]|100)% "; }
 function mysql_solo_local() { ! sudo ss -tulpn | grep -q -E "(0.0.0.0|\[::\]):3306 "; }
-function servidor3_accesible() { sudo ssh $SSH_S3 "$SERVIDOR3_USUARIO@$SERVIDOR3_IP" true; }
-function respaldo_de_hoy_en_servidor3() { sudo ssh $SSH_S3 "$SERVIDOR3_USUARIO@$SERVIDOR3_IP" "ls $SERVIDOR3_DIR" | grep -q "backup_sigeru_$(date +%F)"; }
+function respaldo_contenedor() { sudo docker ps | grep -q "apis_sigeru-respaldo-1"; }
+function respaldo_reciente_volumen() { sudo find /var/lib/docker/volumes/apis_sigeru_respaldos_data/_data -name "*.tar.gz" -mmin -1440 | grep -q .; }
 function web_corriendo() {
-    for c in apis_sigeru-mysql-1 apis_sigeru-api-1 apis_sigeru-api-usuarios-1 apis_sigeru-api-gestion-1 apis_sigeru-api-recoleccion-1 apis_sigeru-ui-1; do
+    for c in apis_sigeru-mysql-1 apis_sigeru-api-1 apis_sigeru-api-usuarios-1 apis_sigeru-api-gestion-1 apis_sigeru-api-recoleccion-1 apis_sigeru-ui-1 apis_sigeru-phpmyadmin-1 apis_sigeru-respaldo-1; do
         sudo docker ps | grep -q "$c" || return 1
     done
 }
@@ -42,12 +41,12 @@ function verificar_sistema() {
     chequear "Hora sincronizada" hora_sincronizada
     chequear "Docker activo" docker_activo
     chequear "Contenedor $CONTENEDOR_DB en ejecución" mysql_corriendo
-    chequear "Aplicación SiGeRU (6 contenedores) en ejecución" web_corriendo
+    chequear "Aplicación SiGeRU (8 contenedores) en ejecución" web_corriendo
     chequear "Base $BASE_DATOS con tablas cargadas" base_con_tablas
     chequear "Respaldo automático configurado en cron" cron_configurado
     chequear "Respaldo de hoy en main" respaldo_de_hoy
-    chequear "VM respaldo accesible por SSH" servidor3_accesible
-    chequear "Copia de hoy en la VM respaldo" respaldo_de_hoy_en_servidor3
+    chequear "Contenedor de respaldo en ejecución" respaldo_contenedor
+    chequear "Respaldo de las últimas 24 h en el volumen" respaldo_reciente_volumen
     chequear "Disco con menos del 90% de uso" disco_suficiente
     chequear "MySQL (3306) no expuesto a toda la red" mysql_solo_local
     echo "Resultado: $fallas verificación(es) con falla"

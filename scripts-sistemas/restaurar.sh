@@ -3,7 +3,6 @@
 RUTA=$(cd "$(dirname "$0")" && pwd)
 source "$RUTA/config.conf"
 
-SSH_OPCIONES="-i $SERVIDOR3_LLAVE -o BatchMode=yes -o ConnectTimeout=10"
 DIR_RESTAURACION="$RUTA/restauracion"
 DESCARGA=""
 SQL=""
@@ -35,38 +34,9 @@ mkdir -p "$DIR_RESTAURACION"
 
 ARCHIVO="$1"
 if [ -z "$ARCHIVO" ]; then
-    echo "Origen del respaldo:"
-    echo "1) main (carpeta local)"
-    echo "2) VM respaldo (copia remota)"
-    read -p "Opción: " ORIGEN
-    case $ORIGEN in
-        1)
-            ls -lt "$DIR_RESPALDOS"
-            read -p "Nombre del archivo a restaurar: " NOMBRE
-            ARCHIVO="$DIR_RESPALDOS/$NOMBRE"
-            ;;
-        2)
-            if ! ssh $SSH_OPCIONES "$SERVIDOR3_USUARIO@$SERVIDOR3_IP" "ls -lt $SERVIDOR3_DIR"; then
-                echo "No se pudo obtener la lista de copias desde respaldo"
-                exit 1
-            fi
-            read -p "Nombre del archivo a restaurar: " NOMBRE
-            if [ -z "$NOMBRE" ]; then
-                echo "Opción inválida"
-                exit 1
-            fi
-            if ! scp $SSH_OPCIONES "$SERVIDOR3_USUARIO@$SERVIDOR3_IP:$SERVIDOR3_DIR/$NOMBRE" "$DIR_RESTAURACION/"; then
-                echo "No se pudo copiar el archivo desde respaldo"
-                exit 1
-            fi
-            ARCHIVO="$DIR_RESTAURACION/$NOMBRE"
-            DESCARGA="$ARCHIVO"
-            ;;
-        *)
-            echo "Opción inválida"
-            exit 1
-            ;;
-    esac
+    ls -lt "$DIR_RESPALDOS"
+    read -p "Nombre del archivo a restaurar: " NOMBRE
+    ARCHIVO="$DIR_RESPALDOS/$NOMBRE"
 fi
 
 if [ ! -f "$ARCHIVO" ]; then
@@ -97,9 +67,6 @@ if [ -n "$EXISTE" ]; then
         echo "No se pudo hacer el respaldo de seguridad, se cancela"
         limpiar
         exit 1
-    fi
-    if [ "$CODIGO" -eq 2 ]; then
-        echo "Aviso: el respaldo de seguridad quedó solo en main"
     fi
 fi
 
